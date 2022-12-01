@@ -19,12 +19,9 @@ int main(void)
 {
 	FILE *fp = fopen("input", "r");
 	int maxes[NUM] = {0};
-	int ctot = 0;
 	char buf[10];
 	while (fgets(buf, 10, fp) != NULL) {
 		if (strlen(buf) == 1) {
-			maxes[NUM-1] = ctot;
-			ctot = 0;
 			qsort(maxes, NUM, sizeof(int), comp);
 			for (int i = 0; i < NUM; i++) {
 				if (i != 0) {
@@ -33,20 +30,21 @@ int main(void)
 				printf("%d", maxes[i]);
 			}
 			printf("\n");
+			maxes[NUM-1] = 0;
 		} else {
 			int curr = strtol(buf, NULL, 10);
-			ctot += curr;
+			maxes[NUM-1] += curr;
 		}
 	}
 
 	printf("\n");
-	ctot = 0;
+	int tot = 0;
 	for (int i = 0; i < NUM - 1; i++) {
 		if (i != 0) {
 			printf(" ");
 		}
 		printf("%d", maxes[i]);
-		ctot += maxes[i];
+		tot += maxes[i];
 	}
-	printf("\n%d\n", ctot);
+	printf("\n%d\n", tot);
 }
