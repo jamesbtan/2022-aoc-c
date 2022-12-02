@@ -36,5 +36,5 @@ int main(void)
 	for (int i = 0; i < NUM; i++) {
 		tot += maxes[i];
 	}
-	printf("\n%d\n", tot);
+	printf("%d\n", tot);
 }

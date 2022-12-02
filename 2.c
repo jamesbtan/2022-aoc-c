@@ -15,7 +15,7 @@ int main(void)
 		// 0 = lose, 1 = tie, 2 = win
 		int s1 = c1 - 'A';
 #ifdef PART1
-		int s2 = c2 - 'Z';
+		int s2 = c2 - 'X';
 		int v = ((s2 - s1) % 3 + 4) % 3;
 #else
 		int v = c2 - 'X';
