@@ -10,10 +10,11 @@ int comp(const void *a, const void *b)
 }
 
 // number to save
-// part 1
-// #define NUM 1
-// part 2
+#ifdef PART1
+#define NUM 1
+#else
 #define NUM 3
+#endif
 
 int main(void)
 {
