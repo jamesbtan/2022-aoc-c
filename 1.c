@@ -2,13 +2,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-int comp(const void *a, const void *b)
-{
-	int a_val = *(const int *)a;
-	int b_val = *(const int *)b;
-	return (b_val > a_val) - (a_val > b_val);
-}
-
 // number to save
 #ifdef PART1
 #define NUM 1
@@ -23,7 +16,11 @@ int main(void)
 	char buf[10];
 	while (fgets(buf, 10, fp) != NULL) {
 		if (strlen(buf) == 1) {
-			qsort(maxes, NUM + 1, sizeof(int), comp);
+			for (int i = NUM; i > 0 && maxes[i-1] < maxes[i]; i--) {
+				int tmp = maxes[i];
+				maxes[i] = maxes[i-1];
+				maxes[i-1] = tmp;
+			}
 			maxes[NUM] = 0;
 		} else {
 			int curr = strtol(buf, NULL, 10);
