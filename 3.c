@@ -31,7 +31,7 @@ int main(void)
 				j++;
 			}
 		}
-		int p = (buf[i] >= 'a') ? buf[i] - 'a' + 1 : buf[i] - 'A' + 27;
+		char c = buf[i];
 #else
 	char buf[3][60];
 	while (fscanf(fp, "%s\n%s\n%s\n", buf[0], buf[1], buf[2]) != EOF) {
@@ -55,8 +55,9 @@ int main(void)
 			if (same) break;
 			ind[mini]++;
 		}
-		int p = (buf[0][ind[0]] >= 'a') ? buf[0][ind[0]] - 'a' + 1 : buf[0][ind[0]] - 'A' + 27;
+		char c = buf[0][ind[0]];
 #endif
+		int p = (c >= 'a') ? c - 'a' + 1 : c - 'A' + 27;
 		tp += p;
 	}
 	fclose(fp);
