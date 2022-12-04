@@ -9,12 +9,8 @@ int contains(range a, range b) {
 	return a.s >= b.s && a.e <= b.e;
 }
 
-int contains_i(range r, int x) {
-	return r.s <= x && x <= r.e;
-}
-
 int intersect(range a, range b) {
-	return (a.s <= b.s) ? contains_i(a, b.s) : contains_i(b, a.s);
+	return a.s <= b.e && a.e >= b.s;
 }
 
 int main(void)
