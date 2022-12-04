@@ -1,12 +1,24 @@
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
+#include <stdint.h>
 
-int comp(const void *a, const void *b) {
-	char av = *(char *) a;
-	char bv = *(char *) b;
-	return (av > bv) - (bv > av);
+int first_set(uint64_t n) {
+	for (int i = 0; i < 64; i++) {
+		if (n & ((uint64_t)1 << i)) {
+			return i;
+		}
+	}
+	return -1;
 }
+
+#ifdef PART1
+#define MASKNUM 2
+#define READNUM 1
+#else
+#define MASKNUM 3
+#define READNUM 3
+#define PART1 0
+#endif
 
 int main(void)
 {
@@ -17,49 +29,29 @@ int main(void)
 	}
 
 	int tp = 0;
-#ifdef PART1
-	char buf[60];
-	while (fgets(buf, 60, fp) != NULL) {
-		int hlen = strlen(buf) / 2;
-		qsort(buf, hlen, sizeof(char), comp);
-		qsort(buf+hlen, hlen, sizeof(char), comp);
-		int i, j;
-		for (i = 0, j = hlen; buf[i] != buf[j];) {
-			if (buf[i] < buf[j]) {
-				i++;
-			} else {
-				j++;
+	char buf[READNUM][60];
+	while (1) {
+		for (int i = 0; i < READNUM; i++) {
+			if (fgets(buf[i], 60, fp) == NULL) {
+				goto out;
 			}
 		}
-		char c = buf[i];
-#else
-	char buf[3][60];
-	while (fscanf(fp, "%s\n%s\n%s\n", buf[0], buf[1], buf[2]) != EOF) {
-		for (int i = 0; i < 3; i++) {
-			qsort(buf[i], strlen(buf[i]), sizeof(char), comp);
-		}
-		int ind[3] = {0};
-		while (1) {
-			int same = 1;
-			int min = buf[0][ind[0]];
-			int mini = 0;
-			for (int i = 1; i < 3; i++) {
-				if (buf[0][ind[0]] != buf[i][ind[i]]) {
-					same = 0;
-				}
-				if (buf[i][ind[i]] < min) {
-					min = buf[i][ind[i]];
-					mini = i;
-				}
+		uint64_t masks[MASKNUM] = {0};
+		for (int i = 0; i < MASKNUM; i++) {
+			int scan = PART1 ? (int)strlen(buf[0]) / 2 : (int)strlen(buf[i]) - 1;
+			for (int j = 0; j < scan; j++) {
+				char c = PART1 ? buf[0][i*scan + j] : buf[i][j];
+				int p = (c >= 'a') ? c - 'a' : c - 'A' + 26;
+				masks[i] |= (uint64_t)1 << p;
 			}
-			if (same) break;
-			ind[mini]++;
 		}
-		char c = buf[0][ind[0]];
-#endif
-		int p = (c >= 'a') ? c - 'a' + 1 : c - 'A' + 27;
-		tp += p;
+		uint64_t mask = ~0;
+		for (int i = 0; i < MASKNUM; i++) {
+			mask &= masks[i];
+		}
+		tp += first_set(mask) + 1;
 	}
+out:
 	fclose(fp);
 
 	printf("%d\n", tp);
