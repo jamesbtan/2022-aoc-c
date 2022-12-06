@@ -5,23 +5,19 @@ int main(void)
 	FILE *fp = fopen("data/input5", "r");
 	int inds[9] = {0};
 	char stks[9][80] = {0};
-	int hpos = 0;
 	char c;
-	while ((c = fgetc(fp)) != EOF) {
+	for (int hpos = 0; (c = fgetc(fp)) != EOF; hpos++) {
 		if (c == '[') {
-			char l = fgetc(fp);
-			hpos++;
 			int i = hpos / 4;
+			stks[i][inds[i]] = fgetc(fp);
 			fgetc(fp);
-			hpos++;
-			stks[i][inds[i]] = l;
+			hpos += 2;
 			inds[i]++;
 		} else if (c == '\n') {
 			hpos = -1;
 		} else if (c != ' ') {
 			break;
 		}
-		hpos++;
 	}
 	for (int i = 0; i < 9; i++) {
 		for (int j = 0; j < inds[i] / 2; j++) {
