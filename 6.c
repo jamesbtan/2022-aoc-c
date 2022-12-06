@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include "ds/deq.h"
 DEF_DEQT(char);
 
@@ -22,18 +23,19 @@ int main(void)
 		} else {
 			assert(d.len == NUM-1);
 			deq_char_pushb(&d, c);
-			int diff = 1;
+			int found = 1;
+			uint32_t mask = 0;
 			for (size_t j = 0; j < d.len; j++) {
-				for (size_t k = 0; k < j; k++) {
-					if (*deq_char_get(&d, j) == *deq_char_get(&d, k)) {
-						diff = 0;
-						goto out;
-					}
+				uint32_t bit = 1 << (*deq_char_get(&d, j) - 'a');
+				if (mask & bit) {
+					found = 0;
+					break;
+				} else {
+					mask |= bit;
 				}
 			}
-out:
 			deq_char_popf(&d);
-			if (diff) break;
+			if (found) break;
 		}
 	}
 	printf("%d\n", i+1);
