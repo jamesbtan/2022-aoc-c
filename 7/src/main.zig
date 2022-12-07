@@ -2,44 +2,78 @@ const std = @import("std");
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 const alloc = gpa.allocator();
 
+pub fn main() !void {
+    var root: *Dir = Dir.create();
+    { // parse
+        const file = try std.fs.cwd().openFile("input7", .{});
+        defer file.close();
+        var fr = file.reader();
+        var br = std.io.bufferedReader(fr);
+        var reader = br.reader();
+
+        var stack = std.ArrayList(*Dir).init(alloc);
+        try stack.append(root);
+        defer stack.deinit();
+        var buf: [64]u8 = undefined;
+        while (try reader.readUntilDelimiterOrEof(&buf, '\n')) |line| {
+            var tok_i = std.mem.tokenize(u8, line, " ");
+            if (tok_i.next()) |fTok| {
+                switch (fTok[0]) {
+                    '$' => {
+                        const cmd = tok_i.next().?;
+                        switch (cmd[0]) {
+                            'c' => {
+                                const arg = tok_i.next().?;
+                                switch (arg[0]) {
+                                    '/' => stack.shrinkRetainingCapacity(1),
+                                    '.' => _ = stack.pop(),
+                                    else => {
+                                        const curr = stack.items[stack.items.len - 1];
+                                        try stack.append(curr.dirs.get(arg).?);
+                                    },
+                                }
+                            },
+                            'l' => {},
+                            else => unreachable,
+                        }
+                    },
+                    'd' => {
+                        var new_dir = Dir.create();
+                        const name = try alloc.dupe(u8, tok_i.next().?);
+                        const curr = stack.items[stack.items.len - 1];
+                        try curr.dirs.put(name, new_dir);
+                    },
+                    else => {
+                        const curr = stack.items[stack.items.len - 1];
+                        curr.size += try std.fmt.parseInt(u32, fTok, 10);
+                    },
+                }
+            }
+        }
+    }
+
+    std.debug.print("{}\n", .{root.get_true_size()});
+    std.debug.print("Part 1: {}\n", .{root.get_more_than(100000)});
+    std.debug.print("Part 2: {}\n", .{root.get_min_more(root.size - 40000000).?});
+}
+
 const Dir = struct {
-    parent: ?*Dir,
     dirs: std.StringHashMap(*Dir),
-    files: std.ArrayList(u32),
     size: u32 = 0,
 
     const Self = @This();
 
-    fn create(parent: ?*Dir) *Dir {
+    fn create() *Dir {
         var d = alloc.create(Dir) catch unreachable;
-        d.parent = parent;
         d.dirs = std.StringHashMap(*Dir).init(alloc);
-        d.files = std.ArrayList(u32).init(alloc);
         d.size = 0;
         return d;
-    }
-
-    fn destroy(self: *Self) void {
-        self.dirs.destroy();
-        self.files.destroy();
-        alloc.free(self);
-    }
-
-    fn get_root(self: *Self) *Self {
-        var i_dir = self;
-        while (i_dir.parent) |parent| {
-            i_dir = parent;
-        }
-        return i_dir;
     }
 
     fn get_true_size(self: *Self) u32 {
         var v_iter = self.dirs.valueIterator();
         while (v_iter.next()) |dir| {
             self.size += dir.*.get_true_size();
-        }
-        for (self.files.items) |s| {
-            self.size += s;
         }
         return self.size;
     }
@@ -57,90 +91,14 @@ const Dir = struct {
         var res: ?u32 = if (self.size >= limit) self.size else null;
         var v_iter = self.dirs.valueIterator();
         while (v_iter.next()) |dir| {
-            var i_res = dir.*.get_min_more(limit);
-            if (i_res) |vi_res| {
-                if (res) |v_res| {
-                    res = std.math.min(vi_res, v_res);
-                } else {
-                    res = vi_res;
-                }
+            const ires = dir.*.get_min_more(limit);
+            if (ires) |v_ires| {
+                res = if (res) |v_res|
+                    std.math.min(v_res, v_ires)
+                else
+                    v_ires;
             }
         }
         return res;
     }
 };
-
-const Kind = enum {
-    cmd,
-    dir,
-};
-
-pub fn main() !void {
-    const file = try std.fs.cwd().openFile("input7", .{});
-    defer file.close();
-    var fr = file.reader();
-    var br = std.io.bufferedReader(fr);
-    var reader = br.reader();
-
-    var curr: ?*Dir = null;
-    {
-        var buf: [64]u8 = undefined;
-        while (try reader.readUntilDelimiterOrEof(&buf, '\n')) |line| {
-            var i: u32 = 0;
-            var tok_i = std.mem.tokenize(u8, line, " ");
-            var k: Kind = undefined;
-            while (tok_i.next()) |tok| : (i += 1) {
-                switch (i) {
-                    0 => {
-                        switch (tok[0]) {
-                            '$' => k = .cmd,
-                            'd' => k = .dir,
-                            else => {
-                                try curr.?.files.append(try std.fmt.parseInt(u32, tok, 10));
-                                break;
-                            },
-                        }
-                    },
-                    1 => {
-                        switch (k) {
-                            .dir => {
-                                var new_dir = Dir.create(curr);
-                                const name = try alloc.alloc(u8, tok.len);
-                                std.mem.copy(u8, name, tok);
-                                try curr.?.dirs.put(name, new_dir);
-                                break;
-                            },
-                            .cmd => {
-                                switch (tok[0]) {
-                                    'l' => {
-                                        break;
-                                    },
-                                    'c' => {},
-                                    else => unreachable,
-                                }
-                            },
-                        }
-                    },
-                    else => {
-                        curr = blk: {
-                            if (tok[0] == '.') break :blk curr.?.parent;
-                            if (curr) |c_dir| {
-                                if (tok[0] == '/') {
-                                    break :blk c_dir.get_root();
-                                } else {
-                                    break :blk c_dir.dirs.get(tok).?;
-                                }
-                            } else {
-                                break :blk Dir.create(curr);
-                            }
-                        };
-                    },
-                }
-            }
-        }
-    }
-    curr = curr.?.get_root();
-    std.debug.print("{}\n", .{curr.?.get_true_size()});
-    std.debug.print("{}\n", .{curr.?.get_more_than(100000)});
-    std.debug.print("{}\n", .{curr.?.get_min_more(curr.?.size - 40000000).?});
-}
